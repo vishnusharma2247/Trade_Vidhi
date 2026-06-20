@@ -3,7 +3,6 @@ import { Platform, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import {
   LayoutDashboard,
-  Eye,
   Lightbulb,
   ArrowLeftRight,
   User,
@@ -131,15 +130,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={LayoutDashboard} focused={focused} label="Home" />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="watchlist"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={Eye} focused={focused} label="Watchlist" />
+            <TabIcon Icon={LayoutDashboard} focused={focused} label="Dashboard" />
           ),
         }}
       />
@@ -152,10 +143,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="portfolio"
+        name="market"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={ArrowLeftRight} focused={focused} label="Trades" />
+            <TabIcon Icon={ArrowLeftRight} focused={focused} label="Market" />
           ),
         }}
       />

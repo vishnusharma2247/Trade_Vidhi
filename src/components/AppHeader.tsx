@@ -37,6 +37,7 @@ export default function AppHeader({
       {showNotifications ? (
         <TouchableOpacity
           activeOpacity={0.7}
+          onPress={() => router.push("/notifications")}
           className="relative h-9 w-9 items-center justify-center rounded-full"
           accessibilityLabel={`Notifications, ${unreadCount} unread`}
           accessibilityRole="button"
