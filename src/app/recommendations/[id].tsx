@@ -1,5 +1,5 @@
-import { useCallback, useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Platform } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Platform, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -18,6 +18,7 @@ import {
   getLivePrice,
 } from "@/data/mock";
 import PriceProgressBar from "@/components/PriceProgressBar";
+import RecordTradeSheet from "@/components/RecordTradeSheet";
 
 function formatPrice(price: number): string {
   return `₹${price.toLocaleString("en-IN", { minimumFractionDigits: price % 1 !== 0 ? 2 : 0 })}`;
@@ -82,12 +83,30 @@ export default function RecommendationDetailScreen() {
     router.back();
   }, [router]);
 
+  const [sheetVisible, setSheetVisible] = useState(false);
+
   const handleRecordTrade = useCallback(() => {
     if (Platform.OS !== "web") {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // Future: navigate to trade recording flow
+    setSheetVisible(true);
   }, []);
+
+  const handleCloseSheet = useCallback(() => {
+    setSheetVisible(false);
+  }, []);
+
+  const handleConfirmTrade = useCallback(
+    (trade: { type: "BUY" | "SELL"; quantity: number; price: number; executedAt: string }) => {
+      setSheetVisible(false);
+      const total = trade.quantity * trade.price;
+      Alert.alert(
+        "Trade Recorded",
+        `${trade.type} ${trade.quantity} shares at ₹${trade.price.toLocaleString("en-IN")} = ₹${total.toLocaleString("en-IN")}`,
+      );
+    },
+    []
+  );
 
   if (!recommendation || !stock) {
     return (
@@ -344,6 +363,15 @@ export default function RecommendationDetailScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Record Trade Bottom Sheet */}
+      <RecordTradeSheet
+        visible={sheetVisible}
+        onClose={handleCloseSheet}
+        onConfirm={handleConfirmTrade}
+        stockId={recommendation.stockId}
+        defaultAction={recommendation.action as "BUY" | "SELL"}
+      />
     </SafeAreaView>
   );
 }

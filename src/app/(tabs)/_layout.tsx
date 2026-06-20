@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   Eye,
   Lightbulb,
-  PieChart,
+  ArrowLeftRight,
   User,
 } from "lucide-react-native";
 import Animated, {
@@ -155,7 +155,7 @@ export default function TabsLayout() {
         name="portfolio"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon Icon={PieChart} focused={focused} label="Portfolio" />
+            <TabIcon Icon={ArrowLeftRight} focused={focused} label="Trades" />
           ),
         }}
       />
