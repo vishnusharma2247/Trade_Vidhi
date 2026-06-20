@@ -20,6 +20,7 @@ export default function OTPInput({
   autoFocus = true,
 }: Props) {
   const [values, setValues] = useState<string[]>(Array(length).fill(""));
+  const lastSubmittedCode = useRef<string | null>(null);
   // initialize refs array with fixed length to avoid undefined access
   const refs = useRef<Array<TextInput | null>>(
     Array.from({ length }).map(() => null),
@@ -41,9 +42,20 @@ export default function OTPInput({
   }, [autoFocus]);
 
   useEffect(() => {
-    if (values.every((v) => v !== "")) {
-      onComplete?.(values.join(""));
+    const code = values.join("");
+    const isComplete = values.every((v) => v !== "");
+
+    if (!isComplete) {
+      lastSubmittedCode.current = null;
+      return;
     }
+
+    if (lastSubmittedCode.current === code) {
+      return;
+    }
+
+    lastSubmittedCode.current = code;
+    onComplete?.(code);
   }, [values, onComplete]);
 
   const handleChange = (text: string, idx: number) => {
@@ -57,10 +69,6 @@ export default function OTPInput({
       } catch (err) {
         // ignore
       }
-    }
-    // if all digits filled, call onComplete immediately
-    if (next.every((v) => v !== "")) {
-      onComplete?.(next.join(""));
     }
   };
 
