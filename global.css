@@ -4,6 +4,9 @@
 
 @import "nativewind/theme";
 
+/* Load Inter via Google Fonts for web (fallback for native where fonts should be bundled) */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 /* Design tokens exported as CSS custom properties for web usage */
 :root {
   --color-surface: #fcf9f8;
@@ -16,8 +19,8 @@
   --color-surface-container-highest: #e5e2e1;
   --color-on-surface: #1c1b1b;
   --color-on-surface-variant: #5a4139;
-  --color-primary: #ab2f00;
-  --color-primary-container: #d3410b;
+  --color-primary: #F15623;
+  --color-primary-container: #F15623;
   --color-secondary: #006c49;
   --color-tertiary: #b61722;
   --color-error: #ba1a1a;
@@ -107,5 +110,3 @@
   }
 }
 
-/* Load Inter via Google Fonts for web (fallback for native where fonts should be bundled) */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
