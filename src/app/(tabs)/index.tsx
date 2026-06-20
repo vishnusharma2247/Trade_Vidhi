@@ -95,7 +95,7 @@ export default function DashboardScreen() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push("/(tabs)/watchlist")}
+            onPress={() => router.push("/(tabs)/market")}
             className="flex-row items-center gap-[6px] rounded-xl border border-outline bg-surface-elevated px-4 py-[10px]"
             accessibilityRole="button"
             accessibilityLabel="Watchlist"
@@ -132,7 +132,7 @@ export default function DashboardScreen() {
             </Text>
             <TouchableOpacity
               activeOpacity={0.7}
-              onPress={() => router.push("/(tabs)/portfolio")}
+              onPress={() => router.push("/(tabs)/market")}
               className="flex-row items-center gap-[2px]"
               accessibilityRole="link"
               accessibilityLabel="View all holdings"
