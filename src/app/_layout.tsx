@@ -26,6 +26,7 @@ function AuthGate() {
     if (!isLoaded) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inTabs = segments[0] === "(tabs)";
     const onOnboarding = segments[0] === "onboarding";
     const onSsoCallback = segments[0] === "sso-callback";
 
@@ -34,7 +35,7 @@ function AuthGate() {
     }
 
     if (isSignedIn && (inAuthGroup || onOnboarding)) {
-      router.replace("/");
+      router.replace("/(tabs)");
     }
   }, [isLoaded, isSignedIn, segments, router]);
 
