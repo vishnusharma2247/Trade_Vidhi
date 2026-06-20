@@ -55,11 +55,7 @@ function normalizeIndianPhone(value: string) {
 
 export function normalizeContact(method: AuthMethod, value: string) {
   const trimmed = value.trim();
-
-  if (method === "email") {
-    return trimmed.toLowerCase();
-  }
-
+  if (method === "email") return trimmed.toLowerCase();
   return normalizeIndianPhone(trimmed);
 }
 
@@ -69,31 +65,26 @@ export function validateContact(method: AuthMethod, value: string) {
   if (!normalized) {
     return {
       normalized,
-      error:
-        method === "email"
-          ? "Enter your email address to receive an OTP."
-          : "Enter your phone number with country code to receive an OTP.",
+      error: "Enter your email address to receive a verification code.",
     };
   }
 
   if (method === "email" && !emailPattern.test(normalized)) {
     return {
       normalized,
-      error: "Enter a valid email address.",
+      error: "Please enter a valid email address.",
     };
   }
 
   return { normalized, error: null };
 }
 
-export function getContactPlaceholder(method: AuthMethod) {
-  return method === "email"
-    ? "Enter your email"
-    : "Enter your phone number";
+export function getContactPlaceholder(_method: AuthMethod) {
+  return "Email address";
 }
 
-export function getContactKeyboardType(method: AuthMethod) {
-  return method === "email" ? "email-address" : "phone-pad";
+export function getContactKeyboardType(_method: AuthMethod) {
+  return "email-address" as const;
 }
 
 export function getVerifiedIdentifierField(method: AuthMethod) {
@@ -116,11 +107,13 @@ export function getSupplementalSignUpFields(
 ) {
   const verifiedField = getVerifiedIdentifierField(verifiedMethod);
 
-  return missingFields.filter(
-    (field): field is SupplementalSignUpField =>
-      normalizeSupplementalField(field) !== verifiedField &&
-      isSupportedSupplementalField(field),
-  ).map((field) => normalizeSupplementalField(field));
+  return missingFields
+    .filter(
+      (field): field is SupplementalSignUpField =>
+        normalizeSupplementalField(field) !== verifiedField &&
+        isSupportedSupplementalField(field),
+    )
+    .map((field) => normalizeSupplementalField(field));
 }
 
 export function matchesVerifiedIdentifierField(
@@ -141,49 +134,21 @@ export function normalizeUnsupportedFields(fields: string[]) {
 
 export function getUnverifiedIdentifierMethod(field: string) {
   const normalizedField = normalizeSupplementalField(field);
-
-  if (normalizedField === "emailAddress") {
-    return "email" as const;
-  }
-
-  if (normalizedField === "phoneNumber") {
-    return "phone" as const;
-  }
-
+  if (normalizedField === "emailAddress") return "email" as const;
+  if (normalizedField === "phoneNumber") return "phone" as const;
   return null;
-}
-
-export function getIdentifierUnverifiedKey(method: AuthMethod) {
-  return method === "email" ? "email_address" : "phone_number";
 }
 
 export function getIdentifierStateField(method: AuthMethod) {
   return method === "email" ? "emailAddress" : "phoneNumber";
 }
 
-export function getIdentifierValue(
-  values: { emailAddress: string; phoneNumber: string },
-  method: AuthMethod,
-) {
-  return method === "email" ? values.emailAddress : values.phoneNumber;
-}
-
-export function getIdentifierLabel(method: AuthMethod) {
-  return method === "email" ? "Email Address" : "Phone Number";
-}
-
 export function getIdentifierPlaceholder(method: AuthMethod) {
-  return method === "email" ? "Email Address" : "Phone Number";
+  return method === "email" ? "Email address" : "Phone number";
 }
 
 export function getIdentifierKeyboardType(method: AuthMethod) {
   return method === "email" ? "email-address" : "phone-pad";
-}
-
-export function getSupplementalFieldSet(missingFields: string[], verifiedMethod: AuthMethod) {
-  return dedupeSupplementalFields(
-    getSupplementalSignUpFields(missingFields, verifiedMethod),
-  );
 }
 
 export function formatFieldLabel(field: string) {

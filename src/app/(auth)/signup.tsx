@@ -1,9 +1,7 @@
 import { useSignUp } from "@clerk/expo/legacy";
-import { useSSO } from "@clerk/expo";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -11,62 +9,47 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import AuthCard from "../../components/AuthCard";
-import AuthMethodToggle from "../../components/AuthMethodToggle";
-import ClerkCaptchaContainer from "../../components/ClerkCaptchaContainer";
-import GoogleAuthButton from "../../components/GoogleAuthButton";
-import {
-  AuthMethod,
-  getContactKeyboardType,
-  getContactPlaceholder,
-  validateContact,
-} from "../../lib/auth/otp";
+import AuthCard from "@/components/AuthCard";
+import ClerkCaptchaContainer from "@/components/ClerkCaptchaContainer";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
+import { useGoogleSSO } from "@/hooks/useGoogleSSO";
+import { validateContact } from "@/lib/auth/otp";
 
 export default function SignUp() {
   const router = useRouter();
-  const [method, setMethod] = useState<AuthMethod>("email");
   const [contact, setContact] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { isLoaded, signUp } = useSignUp();
-  const { startSSOFlow } = useSSO();
+  const { continueWithGoogle, isGoogleSubmitting } = useGoogleSSO();
 
   const requestOtp = async () => {
-    const { normalized, error } = validateContact(method, contact);
+    setError(null);
+    const { normalized, error: validationError } = validateContact(
+      "email",
+      contact,
+    );
 
-    if (error) {
-      Alert.alert("Invalid details", error);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     if (!isLoaded || !signUp) {
-      Alert.alert(
-        "Auth not ready",
-        "Authentication is still initializing. Please try again in a moment.",
-      );
+      setError("Authentication is still initializing. Please try again.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const createdSignUp =
-        method === "email"
-          ? await signUp.create({ emailAddress: normalized })
-          : await signUp.create({ phoneNumber: normalized });
-
-      if (method === "email") {
-        await createdSignUp.prepareEmailAddressVerification({
-          strategy: "email_code",
-        });
-      } else {
-        await createdSignUp.preparePhoneNumberVerification({
-          strategy: "phone_code",
-        });
-      }
+      const createdSignUp = await signUp.create({ emailAddress: normalized });
+      await createdSignUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
 
       router.push(
-        `/verify?contact=${encodeURIComponent(normalized)}&mode=signup&method=${method}`,
+        `/verify?contact=${encodeURIComponent(normalized)}&mode=signup&method=email`,
       );
     } catch (err) {
       const rawMessage =
@@ -74,107 +57,79 @@ export default function SignUp() {
           ? err.message
           : "We could not send an OTP right now. Please try again.";
       const message = rawMessage.toLowerCase().includes("captcha")
-        ? "Clerk bot protection could not load in this browser. On web, try disabling ad blockers or privacy extensions, then refresh and try again."
+        ? "Bot protection could not load. Try disabling ad blockers or privacy extensions, then refresh."
         : rawMessage;
       console.error("Sign-up OTP request error", err);
-      Alert.alert("Unable to send OTP", message);
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const continueWithGoogle = async () => {
-    setIsGoogleSubmitting(true);
-
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_google",
-      });
-
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/");
-        return;
-      }
-
-      throw new Error(
-        "Google sign-up could not be completed. Please try again.",
-      );
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Google sign-up is unavailable right now.";
-      console.error("Google sign-up error", err);
-      Alert.alert("Unable to continue with Google", message);
-    } finally {
-      setIsGoogleSubmitting(false);
-    }
-  };
+  const isDisabled = isSubmitting || isGoogleSubmitting;
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-[#fff6f4]"
+      className="flex-1 bg-surface"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View className="flex-1 px-6 pt-12">
-        <Text className="text-center text-4xl font-extrabold">
-          Create Account
+      <View className="flex-1 px-5 pt-16">
+        <Text className="text-[28px] font-bold tracking-tight text-foreground">
+          Create account
         </Text>
-        <Text className="mt-2 text-center text-gray-600">
-          Start with an email or phone OTP. We will only ask for extra details if
-          your account setup requires them.
+        <Text className="mt-2 text-[15px] leading-[22px] text-foreground-muted">
+          We'll send a verification code to your email to get started.
         </Text>
 
         <AuthCard>
-          <AuthMethodToggle value={method} onChange={setMethod} />
-
           <TextInput
-            placeholder={getContactPlaceholder(method)}
+            placeholder="Email address"
             value={contact}
-            onChangeText={setContact}
-            keyboardType={getContactKeyboardType(method)}
+            onChangeText={(text) => {
+              setContact(text);
+              if (error) setError(null);
+            }}
+            keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            editable={!isSubmitting && !isGoogleSubmitting}
-            className="rounded-xl border border-rose-200 px-5 py-4 text-base"
+            editable={!isDisabled}
+            placeholderTextColor="#9b9b9b"
+            className={`h-[52px] rounded-xl px-4 text-[15px] text-foreground ${
+              error
+                ? "border-[1.5px] border-error bg-surface-elevated"
+                : "border-[1.5px] border-transparent bg-surface-muted"
+            }`}
           />
 
-          {method === "phone" ? (
-            <Text className="mt-3 text-xs text-gray-500">
-              Enter `9876543210` or `+919876543210`. We will normalize it
-              automatically.
+          {error ? (
+            <Text className="mt-2 text-xs font-medium text-error">
+              {error}
             </Text>
           ) : null}
 
           <ClerkCaptchaContainer />
 
-          {Platform.OS === "web" ? (
-            <Text className="mt-3 text-xs text-gray-500">
-              If sign-up is blocked, disable ad blockers or privacy extensions and
-              refresh the page so Clerk CAPTCHA can load.
-            </Text>
-          ) : null}
-
           <TouchableOpacity
-            activeOpacity={0.9}
-            disabled={isSubmitting || isGoogleSubmitting}
-            className="mt-6 h-14 items-center justify-center rounded-full bg-[#F15623]"
+            activeOpacity={0.85}
+            disabled={isDisabled}
+            className={`mt-5 h-[52px] items-center justify-center rounded-full bg-primary ${isDisabled ? "opacity-50" : ""}`}
             onPress={requestOtp}
           >
-            <Text className="text-lg font-semibold text-white">
-              {isSubmitting ? "Sending OTP..." : "Create Account"}
+            <Text className="text-[15px] font-semibold text-white">
+              {isSubmitting ? "Sending code..." : "Continue"}
             </Text>
           </TouchableOpacity>
 
-          <View className="mt-6 items-center">
-            <Text className="text-xs tracking-[2px] text-gray-400">
-              OR CONTINUE WITH
+          <View className="my-6 flex-row items-center">
+            <View className="flex-1 border-b border-outline-subtle" />
+            <Text className="px-3 text-[11px] font-medium uppercase tracking-widest text-foreground-subtle">
+              or
             </Text>
+            <View className="flex-1 border-b border-outline-subtle" />
           </View>
 
           <GoogleAuthButton
-            disabled={isSubmitting || isGoogleSubmitting}
+            disabled={isDisabled}
             label={
               isGoogleSubmitting
                 ? "Connecting to Google..."
@@ -183,15 +138,21 @@ export default function SignUp() {
             onPress={continueWithGoogle}
           />
 
-          <View className="mt-4 items-center">
-            <Text className="text-sm text-gray-600">
+          <View className="mt-6 items-center">
+            <Text className="text-[13px] text-foreground-muted">
               Already have an account?{" "}
-              <Text className="font-semibold text-[#F15623]">
-                <Link href="/signin">Sign In</Link>
-              </Text>
+              <Link href="/signin">
+                <Text className="font-semibold text-primary">Sign in</Text>
+              </Link>
             </Text>
           </View>
         </AuthCard>
+
+        <Text className="mt-8 text-center text-[12px] leading-[18px] text-foreground-subtle">
+          By continuing, you agree to our{" "}
+          <Text className="text-foreground-muted">Terms & Conditions</Text> and{" "}
+          <Text className="text-foreground-muted">Privacy Policy</Text>.
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );

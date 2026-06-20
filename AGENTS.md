@@ -322,6 +322,12 @@ types/
 assets/
 ```
 
+Create these directories when building the first feature that requires them.
+
+Do not create empty placeholder files or directories.
+
+Each directory should exist only when it has real, working code inside it.
+
 ---
 
 # app/
@@ -516,6 +522,174 @@ enum
 ```
 
 Keep types readable.
+
+---
+
+# Error Handling Patterns
+
+VERY IMPORTANT
+
+All user-facing errors must follow a consistent pattern.
+
+## Rules
+
+1. Every async operation must be wrapped in try/catch.
+2. Never show raw error messages or stack traces to users.
+3. Always provide a human-readable title and message in alerts.
+4. Log the raw error to console for debugging.
+5. Always reset loading/submitting state in a `finally` block.
+
+## Pattern
+
+```ts
+const performAction = async () => {
+  setIsLoading(true);
+
+  try {
+    const result = await someApiCall();
+    // handle success
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Something went wrong. Please try again.";
+    console.error("Context about the failure", err);
+    Alert.alert("User-Friendly Title", message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+## Alert Titles
+
+Use specific, short titles that describe the failed action:
+
+- "Unable to send OTP"
+- "Unable to load portfolio"
+- "Unable to place order"
+- "Connection failed"
+
+Never use generic titles like "Error" or "Something went wrong" as the title.
+
+## Network Errors
+
+For network failures, use:
+
+```ts
+"Please check your internet connection and try again."
+```
+
+## API Error Responses
+
+When the backend returns structured errors:
+
+```ts
+if (response.error?.code === "RATE_LIMITED") {
+  Alert.alert("Too many requests", "Please wait a moment and try again.");
+  return;
+}
+```
+
+## Silent Failures
+
+Some errors should not interrupt the user:
+
+- Analytics failures
+- Background refresh failures
+- Non-critical cache misses
+
+Log these to console only. Do not show alerts.
+
+## Loading States
+
+Every action that involves a network call must:
+
+1. Disable the triggering button immediately.
+2. Show loading text or spinner.
+3. Re-enable the button after success or failure.
+
+Never leave the user without feedback during a network call.
+
+---
+
+# Testing Strategy
+
+## Rules
+
+1. Every feature should be testable.
+2. Write tests when the feature is stable, not during initial prototyping.
+3. Do not skip testing for financial calculations or data transformations.
+
+## Unit Tests
+
+Use Jest.
+
+Test:
+
+- Utility functions (validation, normalization, formatting)
+- Store logic (Zustand actions and selectors)
+- Data transformations (portfolio calculations, P&L computation)
+
+Location:
+
+```txt
+__tests__/
+  lib/
+  store/
+  utils/
+```
+
+Or co-locate as `*.test.ts` next to the source file.
+
+## Component Tests
+
+Use React Native Testing Library.
+
+Test:
+
+- Critical user flows (OTP input, form submission)
+- Conditional rendering (loading states, error states, empty states)
+- Interactive components (toggles, filters, search)
+
+Do not test:
+
+- Static layout
+- Styling
+- Third-party library internals
+
+## Integration Tests
+
+Test:
+
+- Auth flow end-to-end (mock Clerk at the network level)
+- Recommendation creation and display
+- Portfolio buy/sell flow
+
+## E2E Tests
+
+Use Detox or Maestro when the app reaches production.
+
+Test:
+
+- Onboarding flow
+- Sign-in and sign-out
+- Buy/Sell a recommendation
+- View portfolio and P&L
+
+## What Must Always Be Tested
+
+- Any function that handles money or financial calculations
+- Phone number and email normalization
+- OTP validation logic
+- Risk score computation
+- P&L calculations
+
+## What Does Not Need Tests
+
+- Simple presentational components with no logic
+- Direct re-exports
+- Expo/React Native framework behavior
 
 ---
 

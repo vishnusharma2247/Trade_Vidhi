@@ -6,7 +6,7 @@ export default function ClerkCaptchaContainer() {
   }
 
   return (
-    <View className="mt-4 overflow-hidden rounded-xl border border-dashed border-rose-200 bg-[#fff8f6] px-4 py-3">
+    <View className="mt-4 overflow-hidden rounded-xl bg-surface-muted px-4 py-3">
       <div id="clerk-captcha" />
     </View>
   );

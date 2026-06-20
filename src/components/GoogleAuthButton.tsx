@@ -1,4 +1,5 @@
-import { Text, TouchableOpacity } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { colors } from "@/constants/colors";
 
 type Props = {
   disabled?: boolean;
@@ -11,15 +12,23 @@ export default function GoogleAuthButton({
   label,
   onPress,
 }: Props) {
+  const isLoading = label.toLowerCase().includes("connecting");
+
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.7}
       disabled={disabled}
-      className="mt-4 h-14 flex-row items-center justify-center rounded-full border border-rose-200 bg-white px-6"
+      className={`mt-4 h-[52px] flex-row items-center justify-center rounded-full border border-outline bg-surface-elevated ${disabled ? "opacity-50" : ""}`}
       onPress={onPress}
     >
-      <Text className="mr-3 text-2xl font-bold text-[#4285F4]">G</Text>
-      <Text className="text-base font-medium text-gray-800">{label}</Text>
+      {isLoading ? (
+        <ActivityIndicator size="small" color={colors.primary} />
+      ) : (
+        <View className="mr-3 h-5 w-5 items-center justify-center">
+          <Text className="text-lg font-bold text-[#4285F4]">G</Text>
+        </View>
+      )}
+      <Text className="text-[15px] font-medium text-foreground">{label}</Text>
     </TouchableOpacity>
   );
 }

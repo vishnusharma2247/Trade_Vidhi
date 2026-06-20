@@ -4,57 +4,37 @@
 
 @import "nativewind/theme";
 
-/* Load Inter via Google Fonts for web (fallback for native where fonts should be bundled) */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-
-/* Design tokens exported as CSS custom properties for web usage */
-:root {
-  --color-surface: #fcf9f8;
-  --color-surface-dim: #dcd9d9;
-  --color-surface-bright: #fcf9f8;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f6f3f2;
-  --color-surface-container: #f0eded;
-  --color-surface-container-high: #eae7e7;
-  --color-surface-container-highest: #e5e2e1;
-  --color-on-surface: #1c1b1b;
-  --color-on-surface-variant: #5a4139;
+@theme {
   --color-primary: #F15623;
-  --color-primary-container: #F15623;
+  --color-primary-hover: #d94a1b;
+  --color-primary-light: #fff4f0;
+  --color-primary-subtle: #fde8e0;
+  --color-on-primary: #ffffff;
+
+  --color-surface: #faf9f7;
+  --color-surface-elevated: #ffffff;
+  --color-surface-muted: #f5f3f1;
+  --color-surface-subtle: #f0eeed;
+
+  --color-foreground: #1a1a1a;
+  --color-foreground-muted: #6b6b6b;
+  --color-foreground-subtle: #9b9b9b;
+
+  --color-outline: #e8e8e8;
+  --color-outline-subtle: #f0f0f0;
+  --color-outline-focus: #F15623;
+
   --color-secondary: #006c49;
-  --color-tertiary: #b61722;
-  --color-error: #ba1a1a;
-  --color-background: #fcf9f8;
+  --color-on-secondary: #ffffff;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-warning: #f59e0b;
+  --color-on-error: #ffffff;
 
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --container-padding: 20px;
-  --card-gap: 16px;
-
-  --radius-sm: 0.25rem;
-  --radius-default: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-card: 20px;
-  --radius-button: 14px;
+  --color-inverse-surface: #1a1a1a;
+  --color-inverse-on-surface: #fafafa;
 }
 
-/* Font families */
-.font-inter {
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
-}
-
-/* Numeric typography helpers */
 .tnum {
   font-variant-numeric: tabular-nums;
 }
@@ -62,51 +42,9 @@
   font-feature-settings: "zero" 1;
 }
 
-/* Cards & shadows */
-.card {
-  background: var(--color-surface-container-lowest);
-  border-radius: var(--radius-card);
-  box-shadow: 0px 4px 20px rgba(26, 26, 26, 0.04);
-}
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border-radius: var(--radius-button);
-  padding: 8px 16px;
-}
-
-/* Data typography helpers (can be used alongside Tailwind classes) */
-.display-lg {
-  font-size: 32px;
-  line-height: 40px;
-  font-weight: 600;
-}
-.display-lg-mobile {
-  font-size: 28px;
-  line-height: 34px;
-  font-weight: 600;
-}
-.headline-md {
-  font-size: 20px;
-  line-height: 28px;
-  font-weight: 600;
-}
-.data-lg {
-  font-size: 18px;
-  line-height: 24px;
-  font-weight: 600;
-}
-.data-md {
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-}
-
-/* Accessibility / reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
     animation: none !important;
   }
 }
-

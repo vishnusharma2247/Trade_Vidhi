@@ -1,9 +1,7 @@
 import { useSignIn } from "@clerk/expo/legacy";
-import { useSSO } from "@clerk/expo";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -11,35 +9,33 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import AuthCard from "../../components/AuthCard";
-import GoogleAuthButton from "../../components/GoogleAuthButton";
-import {
-  getContactKeyboardType,
-  getContactPlaceholder,
-  validateContact,
-} from "../../lib/auth/otp";
+import AuthCard from "@/components/AuthCard";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
+import { useGoogleSSO } from "@/hooks/useGoogleSSO";
+import { validateContact } from "@/lib/auth/otp";
 
 export default function SignIn() {
   const router = useRouter();
   const [contact, setContact] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { isLoaded, signIn } = useSignIn();
-  const { startSSOFlow } = useSSO();
+  const { continueWithGoogle, isGoogleSubmitting } = useGoogleSSO();
 
   const requestOtp = async () => {
-    const { normalized, error } = validateContact("email", contact);
+    setError(null);
+    const { normalized, error: validationError } = validateContact(
+      "email",
+      contact,
+    );
 
-    if (error) {
-      Alert.alert("Invalid details", error);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     if (!isLoaded || !signIn) {
-      Alert.alert(
-        "Auth not ready",
-        "Authentication is still initializing. Please try again in a moment.",
-      );
+      setError("Authentication is still initializing. Please try again.");
       return;
     }
 
@@ -73,85 +69,74 @@ export default function SignIn() {
           ? err.message
           : "We could not send an OTP right now. Please try again.";
       console.error("Sign-in OTP request error", err);
-      Alert.alert("Unable to send OTP", message);
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const continueWithGoogle = async () => {
-    setIsGoogleSubmitting(true);
-
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_google",
-      });
-
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/");
-        return;
-      }
-
-      throw new Error(
-        "Google sign-in could not be completed. Please try again.",
-      );
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Google sign-in is unavailable right now.";
-      console.error("Google sign-in error", err);
-      Alert.alert("Unable to continue with Google", message);
-    } finally {
-      setIsGoogleSubmitting(false);
-    }
-  };
+  const isDisabled = isSubmitting || isGoogleSubmitting;
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-[#fff6f4]"
+      className="flex-1 bg-surface"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View className="flex-1 px-6 pt-12">
-        <Text className="text-center text-4xl font-extrabold">
-          Welcome to TradeVidhi
+      <View className="flex-1 px-5 pt-16">
+        <Text className="text-[28px] font-bold tracking-tight text-foreground">
+          Welcome back
         </Text>
-        <Text className="mt-2 text-center text-gray-600">
-          Sign in with a one-time password sent to your email.
+        <Text className="mt-2 text-[15px] leading-[22px] text-foreground-muted">
+          Sign in with a one-time code sent to your email.
         </Text>
 
         <AuthCard>
           <TextInput
-            placeholder={getContactPlaceholder("email")}
+            placeholder="Email address"
             value={contact}
-            onChangeText={setContact}
-            keyboardType={getContactKeyboardType("email")}
+            onChangeText={(text) => {
+              setContact(text);
+              if (error) setError(null);
+            }}
+            keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            editable={!isSubmitting && !isGoogleSubmitting}
-            className="rounded-xl border border-rose-200 px-5 py-4 text-base"
+            editable={!isDisabled}
+            placeholderTextColor="#9b9b9b"
+            className={`h-[52px] rounded-xl px-4 text-[15px] text-foreground ${
+              error
+                ? "border-[1.5px] border-error bg-surface-elevated"
+                : "border-[1.5px] border-transparent bg-surface-muted"
+            }`}
           />
 
+          {error ? (
+            <Text className="mt-2 text-xs font-medium text-error">
+              {error}
+            </Text>
+          ) : null}
+
           <TouchableOpacity
-            activeOpacity={0.9}
-            disabled={isSubmitting || isGoogleSubmitting}
-            className="mt-6 h-14 items-center justify-center rounded-full bg-[#F15623]"
+            activeOpacity={0.85}
+            disabled={isDisabled}
+            className={`mt-5 h-[52px] items-center justify-center rounded-full bg-primary ${isDisabled ? "opacity-50" : ""}`}
             onPress={requestOtp}
           >
-            <Text className="text-lg font-semibold text-white">
-              {isSubmitting ? "Sending OTP..." : "Get OTP"}
+            <Text className="text-[15px] font-semibold text-white">
+              {isSubmitting ? "Sending code..." : "Continue"}
             </Text>
           </TouchableOpacity>
 
-          <View className="mt-6 items-center">
-            <Text className="text-xs tracking-[2px] text-gray-400">
-              OR CONTINUE WITH
+          <View className="my-6 flex-row items-center">
+            <View className="flex-1 border-b border-outline-subtle" />
+            <Text className="px-3 text-[11px] font-medium uppercase tracking-widest text-foreground-subtle">
+              or
             </Text>
+            <View className="flex-1 border-b border-outline-subtle" />
           </View>
 
           <GoogleAuthButton
-            disabled={isSubmitting || isGoogleSubmitting}
+            disabled={isDisabled}
             label={
               isGoogleSubmitting
                 ? "Connecting to Google..."
@@ -160,22 +145,21 @@ export default function SignIn() {
             onPress={continueWithGoogle}
           />
 
-          <View className="mt-4 items-center">
-            <Text className="text-sm text-gray-600">
+          <View className="mt-6 items-center">
+            <Text className="text-[13px] text-foreground-muted">
               Don't have an account?{" "}
-              <Text className="font-semibold text-[#F15623]">
-                <Link href="/signup">Sign Up</Link>
-              </Text>
+              <Link href="/signup">
+                <Text className="font-semibold text-primary">Sign up</Text>
+              </Link>
             </Text>
           </View>
         </AuthCard>
 
-        <View className="mt-6 items-center">
-          <Text className="text-gray-500">By continuing, you agree to our</Text>
-          <Text className="text-[#F15623]">
-            Terms & Conditions and Privacy Policy.
-          </Text>
-        </View>
+        <Text className="mt-8 text-center text-[12px] leading-[18px] text-foreground-subtle">
+          By continuing, you agree to our{" "}
+          <Text className="text-foreground-muted">Terms & Conditions</Text> and{" "}
+          <Text className="text-foreground-muted">Privacy Policy</Text>.
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );

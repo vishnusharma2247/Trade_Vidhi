@@ -1,43 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import {
-    NativeSyntheticEvent,
-    Platform,
-    StyleSheet,
-    TextInput,
-    TextInputKeyPressEventData,
-    View,
+  NativeSyntheticEvent,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TextInputKeyPressEventData,
+  View,
 } from "react-native";
 
 type Props = {
   length?: number;
   onComplete?: (code: string) => void;
   autoFocus?: boolean;
+  hasError?: boolean;
 };
 
 export default function OTPInput({
   length = 6,
   onComplete,
   autoFocus = true,
+  hasError = false,
 }: Props) {
   const [values, setValues] = useState<string[]>(Array(length).fill(""));
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const lastSubmittedCode = useRef<string | null>(null);
-  // initialize refs array with fixed length to avoid undefined access
   const refs = useRef<Array<TextInput | null>>(
     Array.from({ length }).map(() => null),
   );
 
   useEffect(() => {
-    try {
-      if (
-        autoFocus &&
-        refs.current &&
-        typeof refs.current[0]?.focus === "function"
-      ) {
-        refs.current[0]?.focus();
-      }
-    } catch (err) {
-      // swallow focus errors to avoid crashing if focus isn't available in some environments
-      // console.warn("OTPInput focus error", err);
+    if (autoFocus && refs.current[0]) {
+      refs.current[0].focus();
     }
   }, [autoFocus]);
 
@@ -58,31 +51,45 @@ export default function OTPInput({
     onComplete?.(code);
   }, [values, onComplete]);
 
+  const fillFromPaste = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, length);
+    if (digits.length === 0) return false;
+
+    const next = Array(length).fill("");
+    for (let i = 0; i < digits.length; i++) {
+      next[i] = digits[i];
+    }
+    setValues(next);
+
+    const focusIdx = Math.min(digits.length, length - 1);
+    refs.current[focusIdx]?.focus();
+    return true;
+  };
+
   const handleChange = (text: string, idx: number) => {
+    if (text.length > 1) {
+      if (fillFromPaste(text)) return;
+    }
+
     const digit = text.replace(/[^0-9]/g, "").slice(-1);
     const next = [...values];
     next[idx] = digit;
     setValues(next);
+
     if (digit && idx < length - 1) {
-      try {
-        refs.current[idx + 1]?.focus?.();
-      } catch (err) {
-        // ignore
-      }
+      refs.current[idx + 1]?.focus();
     }
   };
 
   const handleKeyPress = (
-    e: NativeSyntheticEvent<TextInputKeyPressEventData> | any,
+    e: NativeSyntheticEvent<TextInputKeyPressEventData>,
     idx: number,
   ) => {
-    const key = e?.nativeEvent?.key ?? e?.key;
+    const key = e.nativeEvent.key;
 
     if (key === "Backspace") {
       if (values[idx] === "" && idx > 0) {
-        try {
-          refs.current[idx - 1]?.focus?.();
-        } catch (err) {}
+        refs.current[idx - 1]?.focus();
         const next = [...values];
         next[idx - 1] = "";
         setValues(next);
@@ -94,23 +101,35 @@ export default function OTPInput({
     }
   };
 
-  const inputs = Array.from({ length });
+  const getCellStyle = (index: number) => {
+    const isFocused = focusedIndex === index;
+    const isFilled = values[index] !== "";
+
+    if (hasError) return [styles.cell, styles.cellError];
+    if (isFocused) return [styles.cell, styles.cellFocused];
+    if (isFilled) return [styles.cell, styles.cellFilled];
+    return [styles.cell];
+  };
 
   return (
     <View style={styles.row}>
-      {inputs.map((_, i) => (
+      {Array.from({ length }).map((_, i) => (
         <TextInput
           key={i}
           ref={(r) => {
-            // ensure array is long enough
             refs.current[i] = r;
           }}
           value={values[i]}
           onChangeText={(t) => handleChange(t, i)}
           onKeyPress={(e) => handleKeyPress(e, i)}
+          onFocus={() => setFocusedIndex(i)}
+          onBlur={() => setFocusedIndex(null)}
           keyboardType={Platform.OS === "ios" ? "number-pad" : "numeric"}
-          maxLength={1}
-          style={styles.input}
+          maxLength={Platform.OS === "web" ? undefined : 1}
+          textContentType="oneTimeCode"
+          autoComplete={i === 0 ? "sms-otp" : "off"}
+          style={getCellStyle(i)}
+          selectionColor="#F15623"
         />
       ))}
     </View>
@@ -121,16 +140,30 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 16,
+    gap: 10,
   },
-  input: {
-    width: 56,
+  cell: {
+    width: 48,
     height: 56,
     textAlign: "center",
-    fontSize: 18,
-    borderWidth: 1,
-    borderColor: "#f87171",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    borderWidth: 1.5,
+    borderColor: "#e8e8e8",
     borderRadius: 12,
-    marginHorizontal: 6,
+    backgroundColor: "#f5f3f1",
+  },
+  cellFocused: {
+    borderColor: "#F15623",
+    backgroundColor: "#ffffff",
+  },
+  cellFilled: {
+    borderColor: "#F15623",
+    backgroundColor: "#fff4f0",
+  },
+  cellError: {
+    borderColor: "#dc2626",
+    backgroundColor: "#fef2f2",
   },
 });
