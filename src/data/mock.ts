@@ -8,7 +8,7 @@ export const mockUser = {
   phone: "+919876543210",
   fullName: "Rahul Sharma",
   avatarUrl: null,
-  role: "user" as const,
+  role: "admin" as const,
   isActive: true,
   riskProfile: "moderate" as const,
   onboardingCompleted: true,

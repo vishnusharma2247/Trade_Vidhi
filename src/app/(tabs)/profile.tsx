@@ -30,7 +30,9 @@ import {
   LogOut,
   ChevronRight,
   BadgeCheck,
+  Shield,
 } from "lucide-react-native";
+import { useUser } from "@clerk/expo";
 import { mockUser } from "@/data/mock";
 
 interface SettingsRowProps {
@@ -75,9 +77,11 @@ function SectionHeader({ title }: { title: string }) {
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   const handleLogout = useCallback(async () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -203,6 +207,30 @@ export default function ProfileScreen() {
             onPress={() => router.push("/(tabs)/market")}
           />
         </View>
+
+        {/* ADMIN Section — only visible to admins */}
+        {isAdmin ? (
+          <>
+            <SectionHeader title="ADMIN" />
+            <View className="mx-5 overflow-hidden rounded-2xl border border-outline-subtle bg-surface-elevated">
+              <SettingsRow
+                icon={<Shield size={16} strokeWidth={1.6} color="#F15623" />}
+                label="Admin Panel"
+                onPress={() => router.push("/(admin)")}
+                trailing={
+                  <View className="flex-row items-center gap-1">
+                    <View className="rounded-md bg-primary-subtle px-2 py-[2px]">
+                      <Text className="text-[10px] font-bold text-primary">
+                        ADMIN
+                      </Text>
+                    </View>
+                    <ChevronRight size={16} strokeWidth={1.8} color="#9b9b9b" />
+                  </View>
+                }
+              />
+            </View>
+          </>
+        ) : null}
 
         {/* TRADING Section */}
         <SectionHeader title="TRADING" />
